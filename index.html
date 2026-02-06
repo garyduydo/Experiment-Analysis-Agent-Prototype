@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Experiment Analysis Agent</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --acid: #CCFF00;
+            --dark: #0A0E27;
+            --cyan: #00D9FF;
+            --pink: #FF0080;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Space Mono', monospace;
+            background: var(--dark);
+            color: #fff;
+        }
+        
+        .syne { font-family: 'Syne', sans-serif; }
+        
+        .grid-bg {
+            background-image: 
+                linear-gradient(rgba(204,255,0,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(204,255,0,0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 20s linear infinite;
+        }
+        
+        @keyframes gridMove {
+            0% { background-position: 0 0; }
+            100% { background-position: 50px 50px; }
+        }
+        
+        .glow-green { box-shadow: 0 0 20px rgba(204,255,0,0.3); }
+        .glow-blue { box-shadow: 0 0 20px rgba(0,217,255,0.3); }
+        .glow-pink { box-shadow: 0 0 20px rgba(255,0,128,0.3); }
+        
+        .data-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(204,255,0,0.2);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .data-card::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: linear-gradient(45deg, transparent 30%, rgba(204,255,0,0.1) 50%, transparent 70%);
+            animation: shimmer 3s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+        
+        .brutal-btn {
+            background: var(--acid);
+            color: var(--dark);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border: 3px solid var(--dark);
+            box-shadow: 6px 6px 0 var(--dark);
+            transition: all 0.15s ease;
+            cursor: pointer;
+        }
+        
+        .brutal-btn:hover {
+            transform: translate(3px, 3px);
+            box-shadow: 3px 3px 0 var(--dark);
+        }
+        
+        .brutal-btn:disabled { opacity: 0.5; }
+        
+        .metric-value {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--acid), var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .status-badge {
+            background: var(--acid);
+            color: var(--dark);
+            font-weight: 700;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+            display: inline-block;
+        }
+        
+        .loading-grid { display: grid; grid-template-columns: repeat(3, 12px); gap: 6px; }
+        .loading-dot {
+            width: 12px; height: 12px;
+            background: var(--acid);
+            animation: loadingPulse 1.5s ease-in-out infinite;
+        }
+        .loading-dot:nth-child(1) { animation-delay: 0s; }
+        .loading-dot:nth-child(2) { animation-delay: 0.15s; }
+        .loading-dot:nth-child(3) { animation-delay: 0.3s; }
+        
+        @keyframes loadingPulse {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+        
+        .highlight-text {
+            background: var(--acid);
+            color: var(--dark);
+            padding: 0 0.25rem;
+            font-weight: 700;
+        }
+        
+        .corner-accent { position: relative; }
+        .corner-accent::before {
+            content: '';
+            position: absolute;
+            top: -2px; left: -2px;
+            width: 20px; height: 20px;
+            border-top: 3px solid var(--acid);
+            border-left: 3px solid var(--acid);
+        }
+        .corner-accent::after {
+            content: '';
+            position: absolute;
+            bottom: -2px; right: -2px;
+            width: 20px; height: 20px;
+            border-bottom: 3px solid var(--cyan);
+            border-right: 3px solid var(--cyan);
+        }
+        
+        .scanline {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--acid), transparent);
+            animation: scanline 8s linear infinite;
+            pointer-events: none;
+            opacity: 0.1;
+            z-index: 9999;
+        }
+        
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100vh); }
+        }
+        
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .result-card { animation: slideInUp 0.4s ease-out backwards; }
+        .result-card:nth-child(1) { animation-delay: 0.1s; }
+        .result-card:nth-child(2) { animation-delay: 0.2s; }
+        .result-card:nth-child(3) { animation-delay: 0.3s; }
+        .result-card:nth-child(4) { animation-delay: 0.4s; }
+        .result-card:nth-child(5) { animation-delay: 0.5s; }
+    </style>
+</head>
+<body class="grid-bg">
+    <div class="scanline"></div>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function ExperimentAnalyzer() {
+            const [experimentData, setExperimentData] = useState(null);
+            const [analyzing, setAnalyzing] = useState(false);
+            const [analysis, setAnalysis] = useState(null);
+            const [error, setError] = useState(null);
+            const [apiKey, setApiKey] = useState(localStorage.getItem('groq_api_key') || '');
+            const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+
+            useEffect(() => {
+                if (!localStorage.getItem('groq_api_key')) setShowApiKeyInput(true);
+            }, []);
+
+            const saveApiKey = () => {
+                if (apiKey.startsWith('gsk_')) {
+                    localStorage.setItem('groq_api_key', apiKey);
+                    setShowApiKeyInput(false);
+                    setError(null);
+                } else {
+                    setError('INVALID KEY → MUST START WITH gsk_');
+                }
+            };
+
+            const sampleData = {
+                experiment_name: "Homepage Hero Test",
+                hypothesis: "Product in use increases conversions",
+                start_date: "2026-01-20",
+                end_date: "2026-02-02",
+                variants: {
+                    control: { name: "Product Image", users: 12450, conversions: 1867, conversion_rate: 0.150, revenue_per_user: 18.20 },
+                    variant_a: { name: "Product In Use", users: 12389, conversions: 2292, conversion_rate: 0.185, revenue_per_user: 21.50 }
+                }
+            };
+
+            const analyzeExperiment = async (data) => {
+                const key = localStorage.getItem('groq_api_key');
+                if (!key) { setError('API KEY REQUIRED'); setShowApiKeyInput(true); return; }
+                
+                setAnalyzing(true);
+                setError(null);
+
+                try {
+                    const prompt = `You are an expert growth analyst. Analyze this A/B test experiment and provide comprehensive insights.
+
+EXPERIMENT DATA:
+${JSON.stringify(data, null, 2)}
+
+Provide your analysis in the following JSON structure (respond ONLY with valid JSON, no markdown):
+
+{
+  "executive_summary": "2-3 sentence summary of results and recommendation",
+  "statistical_results": {
+    "winner": "variant_a or control or inconclusive",
+    "lift": "percentage improvement",
+    "confidence_level": "95% or 90% or below 90%",
+    "is_significant": true/false
+  },
+  "key_insights": [
+    "Insight 1 with specific numbers",
+    "Insight 2 with specific numbers",
+    "Insight 3 with specific numbers"
+  ],
+  "secondary_metrics": [
+    {
+      "metric": "avg_session_duration",
+      "impact": "positive/negative/neutral",
+      "change": "percentage or absolute change",
+      "note": "brief explanation"
+    }
+  ],
+  "recommended_action": "ship/iterate/kill with brief rationale",
+  "next_experiments": [
+    "Suggested follow-up experiment 1",
+    "Suggested follow-up experiment 2"
+  ]
+}`;
+
+                    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${key}`
+                        },
+                        body: JSON.stringify({
+                            model: "llama-3.1-70b-versatile",
+                            messages: [{ role: "user", content: prompt }],
+                            temperature: 0.3,
+                            max_tokens: 3000
+                        })
+                    });
+                    
+                    if (!response.ok) throw new Error('API FAILED');
+                    const result = await response.json();
+                    const text = result.choices[0].message.content.replace(/```json\n?|```\n?/g, '').trim();
+                    setAnalysis(JSON.parse(text));
+                } catch (err) {
+                    setError(`ERROR: ${err.message}`);
+                } finally {
+                    setAnalyzing(false);
+                }
+            };
+
+            const handleFileUpload = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        try {
+                            setExperimentData(JSON.parse(ev.target.result));
+                            setAnalysis(null);
+                            setError(null);
+                        } catch { setError("INVALID JSON"); }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+
+            if (showApiKeyInput) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center p-6">
+                        <div className="data-card corner-accent max-w-md w-full p-8 relative z-10">
+                            <div className="text-center mb-8">
+                                <div className="text-6xl mb-4">🔑</div>
+                                <h1 className="syne text-3xl font-bold mb-2">API KEY REQUIRED</h1>
+                                <p className="text-sm opacity-70">FREE GROQ API • NO CREDIT CARD</p>
+                            </div>
+                            <div className="space-y-4">
+                                <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="gsk_..." className="w-full bg-transparent border-2 border-[var(--acid)] px-4 py-3 focus:outline-none" style={{fontFamily: 'Space Mono'}} />
+                                {error && <div className="bg-[var(--pink)] text-white px-4 py-2 text-sm font-bold">⚠ {error}</div>}
+                                <button onClick={saveApiKey} className="brutal-btn w-full py-4">SAVE KEY</button>
+                                <p className="text-xs text-center opacity-60">
+                                    GET FREE KEY: <span className="highlight-text">console.groq.com</span><br/>STORED LOCALLY • 100% FREE
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen p-4 md:p-8">
+                    <div className="max-w-7xl mx-auto">
+                        <header className="mb-12 text-center">
+                            <div className="status-badge mb-4 inline-block">EXPERIMENT ANALYZER v1.0</div>
+                            <h1 className="syne text-5xl md:text-7xl font-black mb-4 leading-none">
+                                GROWTH<br/><span style={{color: 'var(--acid)'}}>INTELLIGENCE</span>
+                            </h1>
+                            <p className="text-lg mb-6 opacity-80">AI-POWERED A/B TEST ANALYSIS • FREE FOREVER</p>
+                            <div className="flex items-center justify-center gap-8 flex-wrap">
+                                <div className="text-center">
+                                    <div className="text-red-400 text-sm mb-1">BEFORE</div>
+                                    <div className="text-3xl font-bold">2-3 HRS</div>
+                                </div>
+                                <div className="text-4xl" style={{color: 'var(--acid)'}}>→</div>
+                                <div className="text-center">
+                                    <div className="text-sm mb-1" style={{color: 'var(--acid)'}}>AFTER</div>
+                                    <div className="text-3xl font-bold" style={{color: 'var(--acid)'}}>5 MIN</div>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowApiKeyInput(true)} className="mt-6 text-xs opacity-50 hover:opacity-100">[ CHANGE API KEY ]</button>
+                        </header>
+
+                        {!experimentData && (
+                            <div className="data-card corner-accent p-8 mb-8 glow-green">
+                                <h2 className="syne text-2xl font-bold mb-6"><span className="highlight-text">01</span> LOAD DATA</h2>
+                                <div className="space-y-4">
+                                    <div className="border-2 border-dashed border-[var(--acid)] p-12 text-center opacity-50 hover:opacity-100 cursor-pointer">
+                                        <input type="file" accept=".json" onChange={handleFileUpload} className="hidden" id="file-upload" />
+                                        <label htmlFor="file-upload" className="cursor-pointer">
+                                            <div className="text-6xl mb-4">📊</div>
+                                            <div className="font-bold">UPLOAD JSON</div>
+                                            <div className="text-xs mt-2 opacity-60">OR TRY SAMPLE BELOW</div>
+                                        </label>
+                                    </div>
+                                    <button onClick={() => {setExperimentData(sampleData); setAnalysis(null); setError(null);}} className="brutal-btn w-full py-4">
+                                        ⚡ LOAD SAMPLE EXPERIMENT
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {experimentData && (
+                            <div className="space-y-6">
+                                <div className="data-card corner-accent p-8 glow-blue">
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div>
+                                            <div className="status-badge mb-2">EXPERIMENT DATA</div>
+                                            <h2 className="syne text-2xl font-bold mb-2">{experimentData.experiment_name}</h2>
+                                            <p className="text-sm opacity-70">{experimentData.hypothesis}</p>
+                                        </div>
+                                        <button onClick={() => {setExperimentData(null); setAnalysis(null);}} className="text-2xl hover:text-[var(--pink)]">✕</button>
+                                    </div>
+
+                                    <div className="grid md:grid-cols-2 gap-6">
+                                        {Object.entries(experimentData.variants).map(([key, variant]) => (
+                                            <div key={key} className={`data-card p-6 ${key === 'control' ? 'border-gray-600' : 'border-[var(--cyan)] glow-blue'}`}>
+                                                <div className="flex items-center gap-2 mb-4">
+                                                    <span className="font-bold">{variant.name}</span>
+                                                    {key === 'control' && <span className="status-badge">CONTROL</span>}
+                                                </div>
+                                                <div className="metric-value syne mb-4">{(variant.conversion_rate * 100).toFixed(2)}%</div>
+                                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                                    <div><div className="opacity-60">USERS</div><div className="font-bold">{variant.users.toLocaleString()}</div></div>
+                                                    <div><div className="opacity-60">CONV</div><div className="font-bold">{variant.conversions.toLocaleString()}</div></div>
+                                                    {variant.revenue_per_user && <div><div className="opacity-60">RPU</div><div className="font-bold">${variant.revenue_per_user.toFixed(2)}</div></div>}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {!analysis && (
+                                        <button onClick={() => analyzeExperiment(experimentData)} disabled={analyzing} className="brutal-btn w-full py-6 mt-6 text-lg">
+                                            {analyzing ? (
+                                                <div className="flex items-center justify-center gap-4">
+                                                    <div className="loading-grid">{[...Array(3)].map((_, i) => <div key={i} className="loading-dot"></div>)}</div>
+                                                    <span>ANALYZING...</span>
+                                                </div>
+                                            ) : '🧠 RUN AI ANALYSIS'}
+                                        </button>
+                                    )}
+                                </div>
+
+                                {error && <div className="bg-[var(--pink)] text-white p-4 font-bold">⚠ {error}</div>}
+
+                                {analysis && (
+                                    <div className="space-y-6">
+                                        <div className="data-card corner-accent p-8 result-card" style={{background: 'linear-gradient(135deg, rgba(204,255,0,0.1), rgba(0,217,255,0.1))'}}>
+                                            <div className="status-badge mb-4">ANALYSIS COMPLETE</div>
+                                            <h2 className="syne text-3xl font-bold mb-4">EXECUTIVE SUMMARY</h2>
+                                            <p className="text-lg mb-6">{analysis.executive_summary}</p>
+                                            <div className="grid grid-cols-3 gap-4">
+                                                <div className="text-center">
+                                                    <div className="text-xs opacity-60 mb-2">WINNER</div>
+                                                    <div className="text-2xl font-bold">
+                                                        {analysis.statistical_results.winner === 'variant_a' ? '🟢 VAR' : analysis.statistical_results.winner === 'control' ? '🔵 CTL' : '⚪ INC'}
+                                                    </div>
+                                                </div>
+                                                <div className="text-center">
+                                                    <div className="text-xs opacity-60 mb-2">LIFT</div>
+                                                    <div className="text-2xl font-bold" style={{color: 'var(--acid)'}}>{analysis.statistical_results.lift}</div>
+                                                </div>
+                                                <div className="text-center">
+                                                    <div className="text-xs opacity-60 mb-2">CONF</div>
+                                                    <div className="text-2xl font-bold" style={{color: 'var(--cyan)'}}>{analysis.statistical_results.confidence_level}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="data-card corner-accent p-8 result-card">
+                                            <h2 className="syne text-2xl font-bold mb-6"><span className="highlight-text">02</span> KEY INSIGHTS</h2>
+                                            <div className="space-y-4">
+                                                {analysis.key_insights.map((insight, idx) => (
+                                                    <div key={idx} className="flex gap-4">
+                                                        <div className="text-2xl font-bold opacity-30">{String(idx + 1).padStart(2, '0')}</div>
+                                                        <div className="flex-1">{insight}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {analysis.secondary_metrics?.length > 0 && (
+                                            <div className="data-card corner-accent p-8 result-card">
+                                                <h2 className="syne text-2xl font-bold mb-6"><span className="highlight-text">03</span> SECONDARY METRICS</h2>
+                                                <div className="space-y-4">
+                                                    {analysis.secondary_metrics.map((metric, idx) => (
+                                                        <div key={idx} className="flex justify-between items-center border-l-4 pl-4" style={{borderColor: metric.impact === 'positive' ? 'var(--acid)' : metric.impact === 'negative' ? 'var(--pink)' : 'gray'}}>
+                                                            <div>
+                                                                <div className="font-bold">{metric.metric}</div>
+                                                                <div className="text-sm opacity-70">{metric.note}</div>
+                                                            </div>
+                                                            <div className="status-badge">{metric.change}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="data-card corner-accent p-8 result-card glow-pink" style={{borderColor: 'var(--pink)'}}>
+                                            <h2 className="syne text-2xl font-bold mb-4"><span className="highlight-text">04</span> RECOMMENDED ACTION</h2>
+                                            <div className="text-4xl font-black mb-4" style={{color: 'var(--pink)'}}>
+                                                {analysis.recommended_action.split(' ')[0].toUpperCase()}
+                                            </div>
+                                            <p className="text-lg">{analysis.recommended_action}</p>
+                                        </div>
+
+                                        {analysis.next_experiments?.length > 0 && (
+                                            <div className="data-card corner-accent p-8 result-card">
+                                                <h2 className="syne text-2xl font-bold mb-6"><span className="highlight-text">05</span> NEXT EXPERIMENTS</h2>
+                                                <div className="space-y-3">
+                                                    {analysis.next_experiments.map((exp, idx) => (
+                                                        <div key={idx} className="flex gap-4 items-start">
+                                                            <div className="status-badge">{idx + 1}</div>
+                                                            <div className="flex-1">{exp}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="grid md:grid-cols-2 gap-4">
+                                            <button onClick={() => {
+                                                const blob = new Blob([JSON.stringify({experiment: experimentData, analysis: analysis, timestamp: new Date().toISOString()}, null, 2)], {type: 'application/json'});
+                                                const a = document.createElement('a');
+                                                a.href = URL.createObjectURL(blob);
+                                                a.download = `analysis-${Date.now()}.json`;
+                                                a.click();
+                                            }} className="brutal-btn py-4">💾 DOWNLOAD REPORT</button>
+                                            <button onClick={() => {setExperimentData(null); setAnalysis(null);}} className="border-2 border-white py-4 font-bold hover:bg-white hover:text-[var(--dark)]">
+                                                ↺ ANALYZE ANOTHER
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        <footer className="mt-16 pt-8 border-t border-[var(--acid)] text-center text-sm opacity-60">
+                            <p className="mb-2">EXPERIMENT ANALYSIS AGENT • BUILT FOR HEIDI GROWTH TEAM</p>
+                            <p>POWERED BY <span className="highlight-text">GROQ + LLAMA 3.1 70B</span> • 100% FREE FOREVER</p>
+                        </footer>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<ExperimentAnalyzer />, document.getElementById('root'));
+    </script>
+</body>
+</html>

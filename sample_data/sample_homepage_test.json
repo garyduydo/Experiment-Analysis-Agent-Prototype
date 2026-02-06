@@ -1,0 +1,40 @@
+{
+  "experiment_name": "Homepage Hero Image Test",
+  "hypothesis": "Showing product in use (vs. product alone) will increase trial signups by demonstrating real-world value",
+  "start_date": "2026-01-20",
+  "end_date": "2026-02-02",
+  "owner": "Growth Team",
+  "variants": {
+    "control": {
+      "name": "Product Image (Control)",
+      "users": 12450,
+      "conversions": 1867,
+      "conversion_rate": 0.150,
+      "avg_session_duration": 95,
+      "bounce_rate": 0.52,
+      "revenue_per_user": 18.20,
+      "time_to_conversion": 180,
+      "pages_per_session": 2.3
+    },
+    "variant_a": {
+      "name": "Product In Use Image",
+      "users": 12389,
+      "conversions": 2292,
+      "conversion_rate": 0.185,
+      "avg_session_duration": 112,
+      "bounce_rate": 0.46,
+      "revenue_per_user": 21.50,
+      "time_to_conversion": 165,
+      "pages_per_session": 2.8
+    }
+  },
+  "metadata": {
+    "traffic_source": "organic_search",
+    "segment": "new_visitors",
+    "platform": "desktop",
+    "geo": "north_america",
+    "device": "desktop",
+    "browser": "chrome"
+  },
+  "notes": "Test ran for 2 weeks to achieve adequate sample size. No major external events during test period."
+}

@@ -1,0 +1,39 @@
+{
+  "experiment_name": "Email Notification Frequency Increase",
+  "hypothesis": "Increasing notification emails from weekly to daily will increase user engagement and feature adoption",
+  "start_date": "2026-01-18",
+  "end_date": "2026-02-01",
+  "owner": "Lifecycle Team",
+  "variants": {
+    "control": {
+      "name": "Weekly Emails (Control)",
+      "users": 15600,
+      "conversions": 4680,
+      "conversion_rate": 0.300,
+      "avg_session_duration": 245,
+      "bounce_rate": 0.22,
+      "revenue_per_user": 67.50,
+      "unsubscribe_rate": 0.012,
+      "feature_adoption_rate": 0.45
+    },
+    "variant_a": {
+      "name": "Daily Emails",
+      "users": 15534,
+      "conversions": 4038,
+      "conversion_rate": 0.260,
+      "avg_session_duration": 238,
+      "bounce_rate": 0.24,
+      "revenue_per_user": 64.20,
+      "unsubscribe_rate": 0.089,
+      "feature_adoption_rate": 0.42
+    }
+  },
+  "metadata": {
+    "traffic_source": "email",
+    "segment": "active_users",
+    "platform": "email_campaign",
+    "geo": "global",
+    "user_cohort": "30_day_active"
+  },
+  "notes": "IMPORTANT: This test showed negative results. Daily emails decreased engagement and dramatically increased unsubscribe rate."
+}

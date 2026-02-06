@@ -1,0 +1,40 @@
+{
+  "experiment_name": "Pricing Page CTA Button Text",
+  "hypothesis": "Using 'Start Free Trial' instead of 'Sign Up' will increase conversion by emphasizing zero-risk trial",
+  "start_date": "2026-01-25",
+  "end_date": "2026-02-02",
+  "owner": "Monetization Team",
+  "variants": {
+    "control": {
+      "name": "Sign Up (Control)",
+      "users": 8934,
+      "conversions": 2145,
+      "conversion_rate": 0.240,
+      "avg_session_duration": 156,
+      "bounce_rate": 0.31,
+      "revenue_per_user": 42.80,
+      "time_to_conversion": 95,
+      "pages_per_session": 3.2
+    },
+    "variant_a": {
+      "name": "Start Free Trial",
+      "users": 8891,
+      "conversions": 2402,
+      "conversion_rate": 0.270,
+      "avg_session_duration": 165,
+      "bounce_rate": 0.28,
+      "revenue_per_user": 45.30,
+      "time_to_conversion": 88,
+      "pages_per_session": 3.5
+    }
+  },
+  "metadata": {
+    "traffic_source": "paid_search",
+    "segment": "high_intent_visitors",
+    "platform": "all",
+    "geo": "global",
+    "device": "mixed",
+    "browser": "all"
+  },
+  "notes": "High-intent traffic from paid search campaigns. Ran across all devices and browsers."
+}
