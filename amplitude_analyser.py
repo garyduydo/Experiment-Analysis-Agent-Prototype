@@ -20,9 +20,8 @@ class AmplitudeExperimentAnalyzer:
     
     def fetch_experiment_data(self, experiment_id):
         """Fetch experiment data from Amplitude"""
-        print(f"📊 Fetching experiment {experiment_id} from Amplitude...")
+        print(f" Fetching experiment {experiment_id} from Amplitude...")
         
-        # Amplitude Experiment API endpoint
         url = f"{self.amplitude_base_url}/experiments/{experiment_id}"
         
         headers = {
@@ -34,17 +33,16 @@ class AmplitudeExperimentAnalyzer:
             response.raise_for_status()
             data = response.json()
             
-            print(f"✅ Successfully fetched experiment data")
+            print(f" Successfully fetched experiment data")
             return self.transform_amplitude_data(data)
         
         except requests.exceptions.RequestException as e:
-            print(f"❌ Error fetching from Amplitude: {e}")
+            print(f" Error fetching from Amplitude: {e}")
             return None
     
     def transform_amplitude_data(self, amplitude_data):
         """Transform Amplitude data format to our analysis format"""
         
-        # Extract variants data
         variants = {}
         for variant in amplitude_data.get('variants', []):
             variant_key = 'control' if variant.get('is_control') else f"variant_{variant.get('id')}"
@@ -59,7 +57,6 @@ class AmplitudeExperimentAnalyzer:
                 "revenue_per_user": variant.get('revenue_per_user')
             }
         
-        # Build experiment object
         experiment_data = {
             "experiment_name": amplitude_data.get('name', 'Unknown Experiment'),
             "hypothesis": amplitude_data.get('hypothesis', ''),
@@ -78,7 +75,7 @@ class AmplitudeExperimentAnalyzer:
     
     def analyze_with_ai(self, experiment_data):
         """Send experiment data to Groq for FREE analysis"""
-        print(f"🧠 Analyzing with Groq AI (FREE)...")
+        print(f" Analyzing with Groq AI (FREE)...")
         
         prompt = f"""You are an expert growth analyst. Analyze this A/B test experiment and provide comprehensive insights.
 
@@ -143,18 +140,16 @@ Provide your analysis in the following JSON structure (respond ONLY with valid J
             response.raise_for_status()
             result = response.json()
             
-            # Extract text from response
             analysis_text = result['choices'][0]['message']['content']
             
-            # Clean and parse JSON
             clean_text = analysis_text.replace('```json', '').replace('```', '').strip()
             analysis = json.loads(clean_text)
             
-            print(f"✅ Analysis complete!")
+            print(f" Analysis complete!")
             return analysis
         
         except Exception as e:
-            print(f"❌ Error analyzing with AI: {e}")
+            print(f" Error analyzing with AI: {e}")
             return None
     
     def save_report(self, experiment_data, analysis, output_file):
@@ -170,38 +165,38 @@ Provide your analysis in the following JSON structure (respond ONLY with valid J
         with open(output_file, 'w') as f:
             json.dump(report, f, indent=2)
         
-        print(f"💾 Report saved to: {output_file}")
+        print(f" Report saved to: {output_file}")
     
     def print_summary(self, analysis):
         """Print analysis summary to console"""
         print("\n" + "="*80)
-        print("📊 EXPERIMENT ANALYSIS SUMMARY")
+        print(" EXPERIMENT ANALYSIS SUMMARY")
         print("="*80)
         
-        print(f"\n🎯 EXECUTIVE SUMMARY:")
+        print(f"\n EXECUTIVE SUMMARY:")
         print(f"   {analysis['executive_summary']}")
         
-        print(f"\n📈 STATISTICAL RESULTS:")
+        print(f"\n STATISTICAL RESULTS:")
         stats = analysis['statistical_results']
         print(f"   Winner: {stats['winner'].upper()}")
         print(f"   Lift: {stats['lift']}")
         print(f"   Confidence: {stats['confidence_level']}")
-        print(f"   Significant: {'✅ YES' if stats['is_significant'] else '❌ NO'}")
+        print(f"   Significant: {' YES' if stats['is_significant'] else ' NO'}")
         
-        print(f"\n💡 KEY INSIGHTS:")
+        print(f"\n KEY INSIGHTS:")
         for i, insight in enumerate(analysis['key_insights'], 1):
             print(f"   {i}. {insight}")
         
-        print(f"\n⚡ RECOMMENDED ACTION:")
+        print(f"\n RECOMMENDED ACTION:")
         print(f"   {analysis['recommended_action'].upper()}")
         
-        print(f"\n🔮 NEXT EXPERIMENTS:")
+        print(f"\n NEXT EXPERIMENTS:")
         for i, exp in enumerate(analysis['next_experiments'], 1):
             print(f"   {i}. {exp}")
         
         print("\n" + "="*80)
-        print(f"💰 Cost: $0.00 (FREE with Groq!)")
-        print(f"⏱️  Time saved: ~2.5 hours vs manual analysis")
+        print(f" Cost: $0.00 (FREE with Groq!)")
+        print(f"  Time saved: ~2.5 hours vs manual analysis")
         print("="*80)
 
 
@@ -233,38 +228,33 @@ Environment Variables:
     
     args = parser.parse_args()
     
-    # Get API keys from environment
     amplitude_api_key = os.getenv('AMPLITUDE_API_KEY')
     amplitude_secret_key = os.getenv('AMPLITUDE_SECRET_KEY')
     groq_api_key = os.getenv('GROQ_API_KEY')
     
-    # Validate API keys
     if not groq_api_key:
-        print("❌ Error: GROQ_API_KEY environment variable not set")
+        print(" Error: GROQ_API_KEY environment variable not set")
         print("   Get your FREE key at: https://console.groq.com")
         print("   Set it with: export GROQ_API_KEY='gsk_...'")
         sys.exit(1)
     
-    # Check arguments
     if not args.experiment and not args.file:
         parser.print_help()
         sys.exit(1)
     
-    # Initialize analyzer
     analyzer = AmplitudeExperimentAnalyzer(
         amplitude_api_key,
         amplitude_secret_key,
         groq_api_key
     )
     
-    # Get experiment data
     if args.file:
-        print(f"📁 Loading experiment data from {args.file}...")
+        print(f" Loading experiment data from {args.file}...")
         with open(args.file, 'r') as f:
             experiment_data = json.load(f)
     else:
         if not amplitude_api_key or not amplitude_secret_key:
-            print("❌ Error: AMPLITUDE_API_KEY and AMPLITUDE_SECRET_KEY required for fetching from Amplitude")
+            print(" Error: AMPLITUDE_API_KEY and AMPLITUDE_SECRET_KEY required for fetching from Amplitude")
             print("   Set them with:")
             print("   export AMPLITUDE_API_KEY='your-key'")
             print("   export AMPLITUDE_SECRET_KEY='your-secret'")
@@ -274,18 +264,15 @@ Environment Variables:
         if not experiment_data:
             sys.exit(1)
     
-    # Analyze with AI
     analysis = analyzer.analyze_with_ai(experiment_data)
     if not analysis:
         sys.exit(1)
     
-    # Print summary
     analyzer.print_summary(analysis)
     
-    # Save report
     analyzer.save_report(experiment_data, analysis, args.output)
     
-    print(f"\n✅ Done! Full report saved to {args.output}")
+    print(f"\n Done! Full report saved to {args.output}")
 
 
 if __name__ == "__main__":
