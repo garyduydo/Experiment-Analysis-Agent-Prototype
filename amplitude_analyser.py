@@ -127,7 +127,7 @@ Provide your analysis in the following JSON structure (respond ONLY with valid J
                     "Authorization": f"Bearer {self.groq_api_key}"
                 },
                 json={
-                    "model": "llama-3.1-70b-versatile",
+                    "model": "llama-3.3-70b-versatile",
                     "messages": [{
                         "role": "user",
                         "content": prompt
